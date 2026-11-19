@@ -19,17 +19,17 @@ DHT dht(DHTPIN, DHTTYPE);
 #define LED_AMARELO 9
 #define LED_VERMELHO 10
 
+bool displayOk = false;
 void setup() {
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
-    for(;;); 
-  }
-
+  Serial.begin(115200);
   dht.begin();
 
   pinMode(LED_VERDE, OUTPUT);
   pinMode(LED_AMARELO, OUTPUT);
   pinMode(LED_VERMELHO, OUTPUT);
 
+  displayOk = display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  if (!displayOk) { Serial.println("OLED indisponivel; LEDs permanecem ativos."); return; }
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
@@ -43,6 +43,17 @@ void loop() {
   delay(2000);
 
   float temp = dht.readTemperature();
+  if (!displayOk) {
+    displayOk = display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    if (displayOk) display.setTextColor(SSD1306_WHITE);
+  }
+  if (!displayOk) {
+    Serial.println(temp);
+    digitalWrite(LED_VERDE, isfinite(temp) && temp < 25);
+    digitalWrite(LED_AMARELO, isfinite(temp) && temp >= 25 && temp < 30);
+    digitalWrite(LED_VERMELHO, isfinite(temp) && temp >= 30);
+    return;
+  }
 
   display.clearDisplay();
   display.setTextSize(1);
